@@ -191,13 +191,9 @@ namespace dotter {
             out.close();
         }
 
-        void Render(const char* dot_file_name = "graph.dot", const char* image_file_name = "graph.png") {
-            char str1[100] = "dot -Tpng ";
-            char str2[] = " -o ";
-            strcat(str1, dot_file_name);
-            strcat(str1, str2);
-            strcat(str1, image_file_name);
-            int ret = std::system(str1);
+        void Render(std::string dot_file_name = "graph.dot", std::string image_file_name = "graph.png") {
+            std::string cmd = "dot -Tpng " + dot_file_name + " -o " + image_file_name;
+            int ret = std::system(cmd.c_str());
             (void)ret;
         }
         
