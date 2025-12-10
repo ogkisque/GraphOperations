@@ -52,14 +52,7 @@ public:
             }
         }
 
-        for (auto& [idx, idxs] : adjacency_lists_)
-        {
-            all_nodes_.insert(idx);
-            for (auto& child : idxs)
-            {
-                all_nodes_.insert(child);
-            }
-        }
+        update_all_nodes();
     }
 
     void add_start_end()
@@ -214,25 +207,20 @@ public:
         std::unordered_map<idx_t, std::vector<idx_t>> rev;
         rev.reserve(adjacency_lists_.size() * 2);
 
-        for (const auto &kv : adjacency_lists_)
+        for (auto &[idx, idxs] : adjacency_lists_)
         {
-            idx_t u = kv.first;
-            if (rev.find(u) == rev.end())
-                rev[u] = {};
-            for (idx_t v : kv.second) {
-                rev[v].push_back(u);
-            }
+            if (rev.find(idx) == rev.end())
+                rev[idx] = {};
+            for (idx_t v : idxs)
+                rev[v].push_back(idx);
         }
 
-        idx_t exit = -1;
-        for (auto& [idx, idxs] : adjacency_lists_)
-            if (idxs.size() == 0) exit = idx;
-
+        idx_t exit = adjacency_lists_.size() - 1;
         return build_dominator_tree_helper(rev, exit, true);
     }
 
     static void
-    dump_tree_dot(std::string& graph_name, std::unordered_map<idx_t, idx_t> tree)
+    dump_tree_dot(std::string& graph_name, std::unordered_map<idx_t, idx_t>& tree)
     {
         dotter::Dotter dotter;
 
@@ -266,7 +254,7 @@ private:
 
     std::unordered_map<idx_t, idx_t>
     build_dominator_tree_helper(const std::unordered_map<idx_t, std::vector<idx_t>> &adj,
-                                idx_t entry, bool order_desc) const
+                                idx_t entry, bool order) const
     {
         std::unordered_map<idx_t, std::vector<idx_t>> preds;
         std::vector<idx_t> all_nodes(all_nodes_.begin(), all_nodes_.end());
@@ -277,7 +265,7 @@ private:
                 preds[child].push_back(idx);
         }
 
-        if (order_desc)
+        if (order)
             std::sort(all_nodes.begin(), all_nodes.end(), std::greater<idx_t>());
         else
             std::sort(all_nodes.begin(), all_nodes.end());
@@ -293,12 +281,11 @@ private:
             if (n == entry) continue;
             
             idx_t new_dom = INVALID;
-            auto itp = preds.find(n);
-            assert(itp != preds.end());
 
-            for (auto pred : itp->second)
+            for (auto pred : preds[n])
             {
                 if (doms.find(pred) == doms.end()) continue;
+                
                 if (new_dom == INVALID)
                     new_dom = pred;
                 else
